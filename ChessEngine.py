@@ -1,10 +1,12 @@
+#Issue when undoing against machine and redo checkmate and stalemate
+
 import Hash
 
 class GameState():
     def __init__(self):
         self.board = [
             ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-            ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
+            ["bP", "bP", "bP", "bP", "--", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
@@ -19,6 +21,9 @@ class GameState():
         self.whiteKingPos = (7, 4)
         self.blackKingPos = (0, 4)
         self.checks = 0
+        self.checkMate = False
+        self.staleMate = True
+
         #special moves
         self.specialMoveFunction = {"c": self.castle, "C": self.castle, "P": self.promotion,
                                     "E": self.enPassant}
@@ -39,10 +44,9 @@ class GameState():
         self.bValue = 118
         self.forceStop = False
 
-        #movefinder
-        self.checkmate = False
-        self.stalemate = False
-        self.eval = 0
+        #evaluation
+        self.evalPieceValues = {"P": 1, "R": 5, "N": 3, "B": 3.5, "Q": 10, '-': 0, 'K': 0}
+        self.evalOnQuantity = 0
 
     """
     This methods "in game" help to keep all the hashing in the engine and not the main
@@ -54,12 +58,22 @@ class GameState():
         self.checkStaleMate(self.hash.hash)
         if self.whiteToMove:
             if move.special == 'E':
-                move.pieceCaptured = 'wP'
-            self.wValue -= self.pieceValues[move.pieceCaptured[1]]
+                self.bValue -= self.pieceValues["P"]
+                self.evalOnQuantity -= self.evalPieceValues["P"]
+            else:
+                self.bValue -= self.pieceValues[move.pieceCaptured[1]]
+                self.evalOnQuantity -= self.evalPieceValues[move.pieceCaptured[1]]
+            if move.special == "P":
+                self.evalOnQuantity -= 9
         else:
             if move.special == 'E':
-                move.pieceCaptured = 'bP'
-            self.bValue -= self.pieceValues[move.pieceCaptured[1]]
+                self.wValue -= self.pieceValues["P"]
+                self.evalOnQuantity += self.evalPieceValues["P"]
+            else:
+                self.wValue -= self.pieceValues[move.pieceCaptured[1]]
+                self.evalOnQuantity += self.evalPieceValues[move.pieceCaptured[1]]
+            if move.special == "P":
+                self.evalOnQuantity += 9
 
         #50move rule
         if move.pieceCaptured != "--" or move.pieceMoved[1] == "P":
@@ -67,22 +81,39 @@ class GameState():
         if self.counter >= 50:
             print("StaleMate by 50 move rule")
             self.forceStop = True
+            self.staleMate = True
         #insufficient material
         if self.wValue < 7 and self.bValue < 7:
             print("StaleMate by insufficient material")
             self.forceStop = True
+            self.staleMate = True
 
-        self.counter += 1#counter of moves
+        self.counter += 1#counter of moves w/pawn or capture
 
     def undoInGameMove(self):
         if len(self.moveLog) != 0:
             aux = self.undoMove()
             self.hash.table[self.hash.hash] -= 2
             self.hash.getMoveHash(aux)
-            if self.whiteToMove:
-                self.wValue += self.pieceValues[aux.pieceCaptured[1]]
+
+            if not self.whiteToMove:
+                if aux.special == 'E':
+                    self.bValue += self.pieceValues["P"]
+                    self.evalOnQuantity += self.evalPieceValues["P"]
+                else:
+                    self.bValue += self.pieceValues[aux.pieceCaptured[1]]
+                    self.evalOnQuantity += self.evalPieceValues[aux.pieceCaptured[1]]
             else:
-                self.bValue += self.pieceValues[aux.pieceCaptured[1]]
+                if aux.special == 'E':
+                    self.wValue += self.pieceValues["P"]
+                    self.evalOnQuantity -= self.evalPieceValues["P"]
+                else:
+                    self.wValue += self.pieceValues[aux.pieceCaptured[1]]
+                    self.evalOnQuantity -= self.evalPieceValues[aux.pieceCaptured[1]]
+
+            if self.forceStop: self.forceStop = False
+            if self.staleMate: self.staleMate = False
+            if self.checkMate: self.checkMate = False
 
     # for simul of checks
     def makeMove(self, move):
@@ -99,6 +130,7 @@ class GameState():
         if move.special != "":
             self.specialMoveFunction[move.special](True, move)
         self.whiteToMove = not self.whiteToMove
+
 
     def undoMove(self):
         if len(self.moveLog) != 0:
@@ -141,9 +173,11 @@ class GameState():
         if len(legalMoves) == 0 and self.checks > 0:
             print("CheckMate black wins" if self.whiteToMove else "CheckMate white wins")
             self.forceStop = True
+            self.checkMate = True
         elif len(legalMoves) == 0:
             print("Stalemate")
             self.forceStop = True
+            self.staleMate = True
         return legalMoves
 
     def checkCheck(self):
@@ -158,8 +192,9 @@ class GameState():
 
     def checkStaleMate(self, hashKey):
         if self.hash.table[hashKey] >= 3:
-            print("StaleMate")
+            print("StaleMate by repetition of positions")
             self.forceStop = True
+            self.staleMate = True
 
     """all possible moves """
     def getAllPossibleMoves(self):

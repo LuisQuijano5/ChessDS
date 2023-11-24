@@ -74,7 +74,6 @@ def main():
                 if e.key == p.K_z:
                     gs.undoInGameMove()
                     moveMade = True
-                    if gs.forceStop: gs.forceStop = False
                 if e.key == p.K_p:
                     p.transform.scale(peña, (HEIGHT, WIDTH))
                     screen.fill((255, 255, 255))
@@ -99,7 +98,7 @@ def main():
         #move finder
         if not gs.forceStop and not playerTurn:
             #time.sleep(0.5)
-            move = bot.randomMove(validMoves)
+            move = bot.greedyMove(validMoves)
             aux = gs.specialMoves.get(move.moveID, move)
             if type(aux) == list: aux = aux.pop()
             gs.makeInGameMove(aux)
