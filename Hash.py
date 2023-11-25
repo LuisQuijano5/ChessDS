@@ -5,6 +5,7 @@ class Table:
     table = {}
     def __init__(self, board):
         self.evalHash = {}
+        self.emptyBoardHash = 0
         self.pieces = {"bP": random.randint(0, self.bound), "bR": random.randint(0, self.bound),
                        "bN": random.randint(0, self.bound), "bB": random.randint(0, self.bound),
                        "bQ": random.randint(0, self.bound), "bK": random.randint(0, self.bound),

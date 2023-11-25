@@ -39,7 +39,7 @@ def main():
     #players
     bot = MoveFinder
     wPlayer = True
-    bPlayer = False
+    bPlayer = True
     while(running):
         playerTurn = (wPlayer and gs.whiteToMove) or (bPlayer and not gs.whiteToMove)
         for e in p.event.get():
@@ -97,7 +97,7 @@ def main():
 
         #move finder
         if not gs.forceStop and not playerTurn:
-            time.sleep(0.5)
+            #time.sleep(0.5)
             move = bot.greedyMove(validMoves)
             aux = gs.specialMoves.get(move.moveID, move)
             if type(aux) == list: aux = aux.pop()

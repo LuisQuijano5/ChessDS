@@ -22,7 +22,7 @@ class GameState():
         self.blackKingPos = (0, 4)
         self.checks = 0
         self.checkMate = False
-        self.staleMate = True
+        self.staleMate = False
 
         #special moves
         self.specialMoveFunction = {"c": self.castle, "C": self.castle, "P": self.promotion,
@@ -426,12 +426,12 @@ class GameState():
                 self.board[move.endRow + 1][move.endCol] = "bP"  # white movement
 
     def checkRMoves(self, move, num):
-        if move.pieceMoved[0] == "w":
+        if move.pieceMoved[0] == "w" and move.startRow == "7":
             if move.startCol == "0":
                 self.wRMoves[0] += num
-            else:
+            elif move.startCol == "7":
                 self.wRMoves[1] += num
-        else:
+        elif move.startRow == "0":
             if move.startCol == "0":
                 self.bRMoves[0] += num
             else:
