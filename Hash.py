@@ -4,7 +4,7 @@ class Table:
     bound = 1000000000
     table = {}
     def __init__(self, board):
-        self.emptyBoardHash = 0
+        self.evalHash = {}
         self.pieces = {"bP": random.randint(0, self.bound), "bR": random.randint(0, self.bound),
                        "bN": random.randint(0, self.bound), "bB": random.randint(0, self.bound),
                        "bQ": random.randint(0, self.bound), "bK": random.randint(0, self.bound),
@@ -26,8 +26,8 @@ class Table:
     def getHash(self, piece, i, j):
         return self.sqValues[i][j] + self.pieces.get(piece)
 
-    def eval(self):
-        pass
+    def eval(self, value):
+        self.evalHash[self.hash] = value
 
     def getMoveHash(self, move):
         self.hash ^= self.getHash(move.pieceMoved, move.startRow, move.startCol)

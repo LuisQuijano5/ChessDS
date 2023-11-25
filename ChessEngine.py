@@ -1,4 +1,4 @@
-#Issue when undoing against machine and redo checkmate and stalemate
+#Issue when undoing against machine
 
 import Hash
 
@@ -6,7 +6,7 @@ class GameState():
     def __init__(self):
         self.board = [
             ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-            ["bP", "bP", "bP", "bP", "--", "bP", "bP", "bP"],
+            ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
