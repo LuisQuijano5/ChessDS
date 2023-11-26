@@ -38,8 +38,8 @@ def main():
 
     #players
     bot = MoveFinder
-    wPlayer = True
-    bPlayer = True
+    wPlayer = False
+    bPlayer = False
     while(running):
         playerTurn = (wPlayer and gs.whiteToMove) or (bPlayer and not gs.whiteToMove)
         for e in p.event.get():

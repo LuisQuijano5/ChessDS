@@ -439,8 +439,6 @@ class GameState():
 
 
 
-
-
 class Move():
     rankToRows = {"1": 7, "2": 6, "3": 5, "4": 4, "5": 3, "6": 2, "7": 1, "8": 0}
     rowsToRank = {v: k for k, v in rankToRows.items()}

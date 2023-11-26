@@ -1,6 +1,6 @@
 import random
 import ChessEngine as ce
-import Tree as t
+import Tree as T
 
 
 def randomMove(moves):
@@ -22,59 +22,48 @@ def greedyMove(moves):
 
 
 class MontecarloFinder:
-    def __init__(self, isWhite):
-        # evaluation
-        self.eval = 0
-        self.depth = 2
-        self.gs = ce.GameState()
-        self.currentNode = None
-        self.stalemate = 0
-        self.value = 1 if isWhite else -1
-        self.checkmateValue = self.value * 1000
+    def __init__(self, isWhite, gamestate):
+        self.color = 1 if isWhite else -1
+        self.gs = gamestate
+        self.rootNode = T.Node(self.gs, self.color == 1)
+        self.depth = 20
 
-    def select(self):
-        pass
-
-    def getUBTC(self):
-        pass
-
-    def expand(self):
-        moves = []
-        for i in self.gs.getValidMoves():
-            moves.append(t.Node(i))
-        pass
-
-
-
-    def rollout(self):
-        for i in range(self.depth):
-            self.gs.makeInGameMove(randomMove(self.gs.getValidMoves()))
-            if self.gs.checkMate or self.gs.staleMate:
+    def updateRoot(self):
+        aux = self.gs.moveLog[-1]
+        for i in self.rootNode.children:
+            if aux == i.move:
+                self.rootNode = i
+                self.rootNode.makeNodeRoot()
+                print("Correct update of root")
                 break
-        eval = self.evalPosition()
 
-    def backProp(self):
-        pass
+    def search(self):
+        self.rootNode.n += 1
+        currentNode = self.rootNode
+        for _ in range(self.depth):
+            if not currentNode.isLeaf():
+                currentNode = currentNode.select()
+                continue
+            if currentNode.n == 0:
+                currentNode.rollout() #includes undoing of moves and backprop
+                currentNode = self.rootNode
+                continue
+            currentNode.expand()
+            currentNode = currentNode.select()
+        return self.bestMove()
 
-
-    """
-    This method will be the ones in charge of everything
-    realted to the eval of the position when move finder requires it
-    """
-    def evalPosition(self):
-        eval = 0
-        eval += self.value * self.kingSafety()
-        eval += self.value * self.movesAvailable()#start of the game
-        eval += self.value * self.passedPawns() #endgame
-        return eval
-
-    def kingSafety(self):
-        eval = 0
-        reference = (0,0)
-        eval = self.value * self.pawnStructure()
-        return eval
-
-    def movesAvailable(self):
-        pass
-
-
+    def bestMove(self):
+        highest = 0
+        maxNode = None
+        for i in self.rootNode.children:
+            if maxNode is None:
+                maxNode = i
+                highest = self.color * maxNode.eval
+                continue
+            if self.color * maxNode.eval > highest:
+                maxNode = i
+                highest = self.color * maxNode.eval
+            elif self.color * maxNode.eval == highest:
+                maxNode = i if random.randint(0,1) == 0 else maxNode
+                highest = self.color * maxNode.eval
+        return maxNode.move
