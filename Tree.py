@@ -3,6 +3,10 @@ import random
 
 
 def randomMove(moves):
+    if len(moves) < 1:
+        return None
+    if len(moves) == 1:
+        return moves[0]
     return moves[random.randint(0, len(moves) - 1)]
 
 
@@ -13,18 +17,24 @@ class Node:
         self.eval = 0
         self.n = 0
         self.children = []
-        self.validMoves = self.gs.getValidMoves()
-        self.depth = 10
+        self.depth = 50
         self.move = move
         self.color = 1 if isWhite else -1
+        if self.parent is None:
+            self.validMoves = self.gs.getValidMoves()
+        else:
+            self.gs.whiteToMove = self.color == 1
+            self.gs.makeInGameMove(self.move, False)
+            self.updateTurn()
+            self.validMoves = self.gs.getValidMoves()
+            self.gs.undoInGameMove(False)
 
     def makeNodeRoot(self):
         self.parent = None
-        self.move = None
+        self.updateGs()
 
     def updateGs(self):
-        if self.move is not None:
-            self.gs.makeInGameMove(self.move)
+        self.gs.makeInGameMove(self.move, False)
 
     def isLeaf(self):
         return len(self.children) == 0
@@ -33,16 +43,22 @@ class Node:
         return len(self.validMoves) == len(self.children)
 
     def select(self):
-        max = -1
+        max = -10000
         goTo = None
+        if len(self.children) == 0:
+            self.expand()
         for i in self.children:
-            if i.n == 0 and i.eval == 0:
+            if i.n == 0 or goTo is None:
                 goTo = i
                 break
             aux = i.getUCB1()
             if aux > max:
                 goTo = i
                 max = aux
+            elif aux == max:
+                rand = random.randint(0,1)
+                goTo = i if rand == 0 else goTo
+                max = aux if rand == 0 else max
         goTo.updateGs()
         return goTo
 
@@ -54,10 +70,13 @@ class Node:
             self.children.append(Node(self.gs, not self.color == 1, i, self))
 
     def rollout(self):
+        self.updateTurn()
         self.n += 1
         c = 0
+        validMoves = self.validMoves
         for i in range(self.depth):
-            self.gs.makeInGameMove(randomMove(self.validMoves))
+            self.gs.makeInGameMove(randomMove(validMoves))
+            validMoves = self.gs.getValidMoves()
             c += 1
             if self.gs.checkMate or self.gs.staleMate:
                 break
@@ -69,22 +88,28 @@ class Node:
         for i in range(c):
             self.gs.undoInGameMove()
 
+    def updateTurn(self):
+        self.gs.whiteToMove = not self.color == 1
+
     def backProp(self):
         aux = self
         while aux.parent is not None:
-            aux.parent.eval += aux.eval
+            aux.parent.eval = aux.eval
             aux.parent.n += 1
             aux.gs.undoInGameMove()
             aux = aux.parent
 
+    def __eq__(self, other):
+        if isinstance(other, Node):
+            return self.move == other.move
 
-    """
-    This method will be the ones in charge of everything
-    realted to the eval of the position when move finder requires it
-    """
     def evalPosition(self):
-        eval = 0
-        eval += self.value * self.kingSafety()
-        eval += self.value * self.movesAvailable()#start of the game
-        eval += self.value * self.passedPawns() #endgame
+        eval = self.gs.evalOnQuantity
+        if self.gs.checkMate:
+            eval = self.color * 1000
+        elif self.gs.staleMate:
+            eval = 0
+        # eval += self.value * self.kingSafety()
+        # eval += self.value * self.movesAvailable()#start of the game
+        # eval += self.value * self.passedPawns() #endgame
         return eval

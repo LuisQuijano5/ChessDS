@@ -26,31 +26,41 @@ class MontecarloFinder:
         self.color = 1 if isWhite else -1
         self.gs = gamestate
         self.rootNode = T.Node(self.gs, self.color == 1)
-        self.depth = 20
+        self.depth = 50
 
-    def updateRoot(self):
-        aux = self.gs.moveLog[-1]
-        for i in self.rootNode.children:
-            if aux == i.move:
-                self.rootNode = i
-                self.rootNode.makeNodeRoot()
-                print("Correct update of root")
-                break
+    def updateRoot(self, node):
+        aux = self.gs.moveLog.pop()
+        if node is not None:
+            if not node.allChildren() or len(node.children) == 0:
+                node.expand()
+            for i in node.children:
+                if i.move.moveID == aux.moveID:
+                    self.rootNode = i
+                    break
+            self.rootNode.makeNodeRoot()
 
     def search(self):
         self.rootNode.n += 1
+        counter = 0
         currentNode = self.rootNode
-        for _ in range(self.depth):
+        while True:
+            flag = False
+            counter += 1
             if not currentNode.isLeaf():
                 currentNode = currentNode.select()
-                continue
-            if currentNode.n == 0:
-                currentNode.rollout() #includes undoing of moves and backprop
-                currentNode = self.rootNode
-                continue
-            currentNode.expand()
-            currentNode = currentNode.select()
-        return self.bestMove()
+            else:
+                if currentNode.n == 0:
+                    currentNode.rollout() #includes undoing of moves and backprop
+                    currentNode = self.rootNode
+                    flag = True
+                else:
+                    currentNode.expand()
+                    currentNode = currentNode.select()
+            if counter > self.depth and flag:
+                break
+        maxNode = self.bestMove()
+        self.gs.whiteToMove = self.color == -1
+        return maxNode
 
     def bestMove(self):
         highest = 0
@@ -66,4 +76,4 @@ class MontecarloFinder:
             elif self.color * maxNode.eval == highest:
                 maxNode = i if random.randint(0,1) == 0 else maxNode
                 highest = self.color * maxNode.eval
-        return maxNode.move
+        return maxNode

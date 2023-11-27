@@ -26,6 +26,9 @@ def loadImages():
 def main():
     aux = True
     screen = p.display.set_mode((WIDTH,HEIGHT))
+    ai = MoveFinder
+    mc = None
+    wmc = None
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.GameState()
@@ -63,7 +66,7 @@ def main():
                             aux = gs.specialMoves.get(move.moveID, move)
                             if type(aux) == list: aux = aux.pop()
                             gs.makeInGameMove(aux)
-                            print(aux.getChessNotation())
+                            #print(aux.getChessNotation())
                             moveMade = True
                             sqSelected = ()
                             playerClicks = []
@@ -98,10 +101,26 @@ def main():
         #move finder
         if not gs.forceStop and not playerTurn:
             #time.sleep(0.5)
-            move = bot.greedyMove(validMoves)
-            aux = gs.specialMoves.get(move.moveID, move)
-            if type(aux) == list: aux = aux.pop()
-            gs.makeInGameMove(aux)
+            #move = bot.greedyMove(validMoves)
+            #print(gs.printBoard())
+            if gs.whiteToMove:
+                if wmc is None:
+                    wmc = ai.MontecarloFinder(not gs.whiteToMove, gs)
+                else:
+                    wmc.updateRoot(wnode)
+                wnode = wmc.search()
+                waux = gs.specialMoves.get(wnode.move.moveID, wnode.move)
+                if type(waux) == list: waux = waux.pop()
+                gs.makeInGameMove(waux)
+            else:
+                if mc is None:
+                    mc = ai.MontecarloFinder(not gs.whiteToMove, gs)
+                else:
+                    mc.updateRoot(node)
+                node = mc.search()
+                aux = gs.specialMoves.get(node.move.moveID, node.move)
+                if type(aux) == list: aux = aux.pop()
+                gs.makeInGameMove(aux)
             #print(aux.getChessNotation())
             moveMade = True
             sqSelected = ()

@@ -52,10 +52,15 @@ class GameState():
     This methods "in game" help to keep all the hashing in the engine and not the main
     it distinguishes simulation check moves and real moves and simul from ai 
     """
-    def makeInGameMove(self, move):
-        self.makeMove(move)
+    def makeInGameMove(self, move, real=True):
+        if move is None:
+            print("Checkmate")
+            self.forceStop = True
+            self.checkMate = True
+            return
+        self.makeMove(move, real)
         self.hash.getMoveHash(move)
-        self.checkStaleMate(self.hash.hash)
+        #self.checkStaleMate(self.hash.hash)
         if self.whiteToMove:
             if move.special == 'E':
                 self.bValue -= self.pieceValues["P"]
@@ -90,9 +95,9 @@ class GameState():
 
         self.counter += 1#counter of moves w/pawn or capture
 
-    def undoInGameMove(self):
+    def undoInGameMove(self, real=True):
         if len(self.moveLog) != 0:
-            aux = self.undoMove()
+            aux = self.undoMove(real)
             self.hash.table[self.hash.hash] -= 2
             self.hash.getMoveHash(aux)
 
@@ -116,7 +121,7 @@ class GameState():
             if self.checkMate: self.checkMate = False
 
     # for simul of checks
-    def makeMove(self, move):
+    def makeMove(self, move, real=True):
         self.board[move.startRow][move.startCol] = "--"
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)
@@ -129,10 +134,11 @@ class GameState():
         if move.moveID[1] == "R": self.checkRMoves(move, 1)
         if move.special != "":
             self.specialMoveFunction[move.special](True, move)
-        self.whiteToMove = not self.whiteToMove
+        if real:
+            self.whiteToMove = not self.whiteToMove
 
 
-    def undoMove(self):
+    def undoMove(self, real=True):
         if len(self.moveLog) != 0:
             moveToUndo = self.moveLog.pop()
             self.board[moveToUndo.startRow][moveToUndo.startCol] = moveToUndo.pieceMoved
@@ -146,7 +152,8 @@ class GameState():
             if moveToUndo.moveID[1] == "R": self.checkRMoves(moveToUndo, -1)
             if moveToUndo.special != "":
                 self.specialMoveFunction[moveToUndo.special](False, moveToUndo)
-            self.whiteToMove = not self.whiteToMove
+            if real:
+                self.whiteToMove = not self.whiteToMove
             return moveToUndo
 
     """only legal moves"""
@@ -437,6 +444,13 @@ class GameState():
             else:
                 self.bRMoves[1] += num
 
+    def printBoard(self):
+        aux = ""
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                aux += self.board[i][j] + " "
+            aux += "\n"
+        return aux
 
 
 class Move():
