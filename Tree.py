@@ -11,19 +11,19 @@ def randomMove(moves):
 
 
 class Node:
-    def __init__(self, gamestate, isWhite, move = None, parent=None):
+    def __init__(self, gamestate, isWhite, move=None, parent=None):
         self.parent = parent
         self.gs = gamestate
         self.eval = 0
         self.n = 0
         self.children = []
-        self.depth = 50
+        self.depth = 100
         self.move = move
         self.color = 1 if isWhite else -1
         if self.parent is None:
             self.validMoves = self.gs.getValidMoves()
         else:
-            self.gs.whiteToMove = self.color == 1
+            self.gs.whiteToMove = not self.color == 1
             self.gs.makeInGameMove(self.move, False)
             self.updateTurn()
             self.validMoves = self.gs.getValidMoves()
@@ -59,6 +59,10 @@ class Node:
                 rand = random.randint(0,1)
                 goTo = i if rand == 0 else goTo
                 max = aux if rand == 0 else max
+        if goTo == None:
+            self.eval = self.color * 100
+            self.backProp()
+            return None
         goTo.updateGs()
         return goTo
 
@@ -75,11 +79,11 @@ class Node:
         c = 0
         validMoves = self.validMoves
         for i in range(self.depth):
-            self.gs.makeInGameMove(randomMove(validMoves))
             validMoves = self.gs.getValidMoves()
-            c += 1
             if self.gs.checkMate or self.gs.staleMate:
                 break
+            self.gs.makeInGameMove(randomMove(validMoves))
+            c += 1
         self.eval = self.evalPosition()
         self.undoMoves(c)
         self.backProp()
@@ -94,7 +98,7 @@ class Node:
     def backProp(self):
         aux = self
         while aux.parent is not None:
-            aux.parent.eval = aux.eval
+            aux.parent.eval += aux.eval
             aux.parent.n += 1
             aux.gs.undoInGameMove()
             aux = aux.parent
@@ -106,7 +110,7 @@ class Node:
     def evalPosition(self):
         eval = self.gs.evalOnQuantity
         if self.gs.checkMate:
-            eval = self.color * 1000
+            eval = self.color * 100
         elif self.gs.staleMate:
             eval = 0
         # eval += self.value * self.kingSafety()

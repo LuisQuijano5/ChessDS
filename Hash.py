@@ -22,7 +22,6 @@ class Table:
                 self.sqValues[i].append(random.randint(0, self.bound))
                 self.emptyBoardHash ^= self.getHash('--', i, j)
                 self.hash ^= self.getHash(board[i][j], i, j)
-        self.table[self.hash] = 1
 
     def getHash(self, piece, i, j):
         return self.sqValues[i][j] + self.pieces.get(piece)
@@ -30,7 +29,7 @@ class Table:
     def eval(self, value):
         self.evalHash[self.hash] = value
 
-    def getMoveHash(self, move):
+    def getMoveHash(self, move, do):
         self.hash ^= self.getHash(move.pieceMoved, move.startRow, move.startCol)
         self.hash ^= self.getHash("--", move.startRow, move.startCol)
         self.hash ^= self.getHash(move.pieceCaptured, move.endRow, move.endCol)
@@ -54,7 +53,10 @@ class Table:
             self.hash ^= self.getHash("--", r, c2)
             self.hash ^= self.getHash(move.moveID[0] + "R", r, c2)
 
-        if self.hash in self.table:
-            self.table[self.hash] += 1
+        if do:
+            if self.hash in self.table:
+                self.table[self.hash] += 1
+            else:
+                self.table[self.hash] = 1
         else:
-            self.table[self.hash] = 1
+            self.table[self.hash] -= 1

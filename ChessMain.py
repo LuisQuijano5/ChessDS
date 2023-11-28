@@ -41,7 +41,7 @@ def main():
 
     #players
     bot = MoveFinder
-    wPlayer = False
+    wPlayer = True
     bPlayer = False
     while(running):
         playerTurn = (wPlayer and gs.whiteToMove) or (bPlayer and not gs.whiteToMove)
@@ -65,7 +65,7 @@ def main():
                         if move in validMoves:
                             aux = gs.specialMoves.get(move.moveID, move)
                             if type(aux) == list: aux = aux.pop()
-                            gs.makeInGameMove(aux)
+                            gs.makeInGameMove(aux, True, True)
                             #print(aux.getChessNotation())
                             moveMade = True
                             sqSelected = ()
@@ -74,8 +74,8 @@ def main():
                             playerClicks = [sqSelected]
                     #key presses
             elif e.type == p.KEYDOWN and playerTurn:
-                if e.key == p.K_z:
-                    gs.undoInGameMove()
+                if e.key == p.K_z and bPlayer == True and wPlayer == True:
+                    gs.undoInGameMove(True, True)
                     moveMade = True
                 if e.key == p.K_p:
                     p.transform.scale(peña, (HEIGHT, WIDTH))
@@ -111,7 +111,7 @@ def main():
                 wnode = wmc.search()
                 waux = gs.specialMoves.get(wnode.move.moveID, wnode.move)
                 if type(waux) == list: waux = waux.pop()
-                gs.makeInGameMove(waux)
+                gs.makeInGameMove(waux, True, True)
             else:
                 if mc is None:
                     mc = ai.MontecarloFinder(not gs.whiteToMove, gs)
@@ -120,7 +120,7 @@ def main():
                 node = mc.search()
                 aux = gs.specialMoves.get(node.move.moveID, node.move)
                 if type(aux) == list: aux = aux.pop()
-                gs.makeInGameMove(aux)
+                gs.makeInGameMove(aux, True, True)
             #print(aux.getChessNotation())
             moveMade = True
             sqSelected = ()

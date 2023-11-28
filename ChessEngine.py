@@ -4,15 +4,25 @@ import Hash
 
 class GameState():
     def __init__(self):
+        # self.board = [
+        #     ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
+        #     ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
+        #     ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
+        # ]
         self.board = [
-            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-            ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
+            ["--", "--", "--", "--", "bK", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "wR"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
-            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
+            ["wR", "wN", "wB", "wR", "wK", "wR", "wN", "--"]
         ]
         self.moveFunction = {"P": self.getPawnMoves, "R": self.getRookMoves, "N": self.getKnightMoves,
                              "B": self.getBishopMoves, "Q": self.getQueenMoves, "K": self.getKingMoves}
@@ -52,15 +62,14 @@ class GameState():
     This methods "in game" help to keep all the hashing in the engine and not the main
     it distinguishes simulation check moves and real moves and simul from ai 
     """
-    def makeInGameMove(self, move, real=True):
+    def makeInGameMove(self, move, real=True, review=False):
         if move is None:
-            print("Checkmate")
+            #print("Checkmate")
             self.forceStop = True
             self.checkMate = True
             return
         self.makeMove(move, real)
-        self.hash.getMoveHash(move)
-        #self.checkStaleMate(self.hash.hash)
+
         if self.whiteToMove:
             if move.special == 'E':
                 self.bValue -= self.pieceValues["P"]
@@ -79,29 +88,38 @@ class GameState():
                 self.evalOnQuantity += self.evalPieceValues[move.pieceCaptured[1]]
             if move.special == "P":
                 self.evalOnQuantity += 9
+        if not review:
+            return
 
+        self.hash.getMoveHash(move, True)
+        for k, v in self.hash.table.items():
+            print(k, v)
         #50move rule
+        if self.hash.table[self.hash.hash] >= 3:
+            #print("StaleMate by repetition of positions")
+            self.forceStop = True
+            self.staleMate = True
         if move.pieceCaptured != "--" or move.pieceMoved[1] == "P":
             self.counter = 0
         if self.counter >= 50:
-            print("StaleMate by 50 move rule")
+            #print("StaleMate by 50 move rule")
             self.forceStop = True
             self.staleMate = True
         #insufficient material
         if self.wValue < 7 and self.bValue < 7:
-            print("StaleMate by insufficient material")
+            #print("StaleMate by insufficient material")
             self.forceStop = True
             self.staleMate = True
-
         self.counter += 1#counter of moves w/pawn or capture
 
-    def undoInGameMove(self, real=True):
+    def undoInGameMove(self, real=True, review=False):
         if len(self.moveLog) != 0:
             aux = self.undoMove(real)
-            self.hash.table[self.hash.hash] -= 2
-            self.hash.getMoveHash(aux)
+            if self.forceStop: self.forceStop = False
+            if self.staleMate: self.staleMate = False
+            if self.checkMate: self.checkMate = False
 
-            if not self.whiteToMove:
+            if aux.moveID[0] == "b":
                 if aux.special == 'E':
                     self.bValue += self.pieceValues["P"]
                     self.evalOnQuantity += self.evalPieceValues["P"]
@@ -116,9 +134,10 @@ class GameState():
                     self.wValue += self.pieceValues[aux.pieceCaptured[1]]
                     self.evalOnQuantity -= self.evalPieceValues[aux.pieceCaptured[1]]
 
-            if self.forceStop: self.forceStop = False
-            if self.staleMate: self.staleMate = False
-            if self.checkMate: self.checkMate = False
+            if not review:
+                return
+            self.hash.getMoveHash(aux, False)
+            self.counter -= 1
 
     # for simul of checks
     def makeMove(self, move, real=True):
@@ -178,11 +197,11 @@ class GameState():
             self.whiteToMove = not self.whiteToMove
         self.checkCheck()
         if len(legalMoves) == 0 and self.checks > 0:
-            print("CheckMate black wins" if self.whiteToMove else "CheckMate white wins")
+            #print("CheckMate black wins" if self.whiteToMove else "CheckMate white wins")
             self.forceStop = True
             self.checkMate = True
         elif len(legalMoves) == 0:
-            print("Stalemate")
+            #print("Stalemate")
             self.forceStop = True
             self.staleMate = True
         return legalMoves
@@ -196,12 +215,6 @@ class GameState():
             if self.checks != 0:
                 return False
         return True
-
-    def checkStaleMate(self, hashKey):
-        if self.hash.table[hashKey] >= 3:
-            print("StaleMate by repetition of positions")
-            self.forceStop = True
-            self.staleMate = True
 
     """all possible moves """
     def getAllPossibleMoves(self):

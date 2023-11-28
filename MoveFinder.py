@@ -26,7 +26,7 @@ class MontecarloFinder:
         self.color = 1 if isWhite else -1
         self.gs = gamestate
         self.rootNode = T.Node(self.gs, self.color == 1)
-        self.depth = 50
+        self.depth = 100
 
     def updateRoot(self, node):
         aux = self.gs.moveLog.pop()
@@ -48,6 +48,9 @@ class MontecarloFinder:
             counter += 1
             if not currentNode.isLeaf():
                 currentNode = currentNode.select()
+                if currentNode is None:
+                    currentNode = self.rootNode
+                    break
             else:
                 if currentNode.n == 0:
                     currentNode.rollout() #includes undoing of moves and backprop
@@ -56,10 +59,15 @@ class MontecarloFinder:
                 else:
                     currentNode.expand()
                     currentNode = currentNode.select()
+                    if currentNode is None:
+                        currentNode = self.rootNode
+                        break
             if counter > self.depth and flag:
                 break
         maxNode = self.bestMove()
         self.gs.whiteToMove = self.color == -1
+        #print(maxNode.eval)
+        #print(maxNode.move)
         return maxNode
 
     def bestMove(self):
@@ -76,4 +84,5 @@ class MontecarloFinder:
             elif self.color * maxNode.eval == highest:
                 maxNode = i if random.randint(0,1) == 0 else maxNode
                 highest = self.color * maxNode.eval
+            #print(maxNode.eval)
         return maxNode
