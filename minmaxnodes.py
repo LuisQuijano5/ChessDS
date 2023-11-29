@@ -10,7 +10,7 @@ def randomMove(moves):
     return moves[random.randint(0, len(moves) - 1)]
 
 
-class Node:
+class NodeMM:
     def __init__(self, gamestate, isWhite, move=None, parent=None):
         self.parent = parent
         self.gs = gamestate
@@ -18,7 +18,7 @@ class Node:
         self.auxEval = 0
         self.n = 0
         self.children = []
-        self.depth = 5
+        self.depth = 1
         self.move = move
         self.color = 1 if isWhite else -1
         if self.parent is None:
@@ -112,12 +112,14 @@ class Node:
 
     def evalPosition(self):
         temp = 0
-        if self.gs.checkMate:
-            if self.color == -1 and  self.gs.whiteToMove:
-                return -10000
-            elif self.color == 1 and not self.gs.whiteToMove:
-                return 10000
         for i in range(len(self.gs.board)):
             for j in range(len(self.gs.board[i])):
                 temp += self.gs.evalPieceValues[self.gs.board[i][j][1]] if self.gs.board[i][j][0] == "w" else -1 * self.gs.evalPieceValues[self.gs.board[i][j][1]]
-        return temp
+        #print("evaleval", self.move.moveID,temp)
+        eval = temp
+        #print("eval",self.move.moveID, eval)
+        #print("EVAL",eval)
+        # eval += self.value * self.kingSafety()
+        # eval += self.value * self.movesAvailable()#start of the game
+        # eval += self.value * self.passedPawns() #endgame
+        return eval

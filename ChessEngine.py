@@ -4,26 +4,26 @@ import Hash
 
 class GameState():
     def __init__(self):
-        # self.board = [
-        #     ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-        #     ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
-        #     ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
-        #     ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
-        # ]
         self.board = [
-            ["--", "--", "--", "--", "bK", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["--", "--", "--", "--", "--", "--", "--", "wR"],
-            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
+            ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
             ["--", "--", "--", "--", "--", "--", "--", "--"],
-            ["wR", "wN", "wB", "wR", "wK", "wR", "wN", "--"]
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
+            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
         ]
+        # self.board = [
+        #     ["--", "--", "--", "--", "bK", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "wR"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["--", "--", "--", "--", "--", "--", "--", "--"],
+        #     ["wR", "wN", "wB", "wR", "wK", "wR", "wN", "--"]
+        # ]
         self.moveFunction = {"P": self.getPawnMoves, "R": self.getRookMoves, "N": self.getKnightMoves,
                              "B": self.getBishopMoves, "Q": self.getQueenMoves, "K": self.getKingMoves}
         self.whiteToMove = True
@@ -55,8 +55,7 @@ class GameState():
         self.forceStop = False
 
         #evaluation
-        self.evalPieceValues = {"P": 1, "R": 5, "N": 3, "B": 3.5, "Q": 10, '-': 0, 'K': 0}
-        self.evalOnQuantity = 0
+        self.evalPieceValues = {"P": 1, "R": 5, "N": 3, "B": 3, "Q": 10, '-': 0, 'K': 0}
 
     """
     This methods "in game" help to keep all the hashing in the engine and not the main
@@ -73,27 +72,19 @@ class GameState():
         if self.whiteToMove:
             if move.special == 'E':
                 self.bValue -= self.pieceValues["P"]
-                self.evalOnQuantity -= self.evalPieceValues["P"]
             else:
                 self.bValue -= self.pieceValues[move.pieceCaptured[1]]
-                self.evalOnQuantity -= self.evalPieceValues[move.pieceCaptured[1]]
-            if move.special == "P":
-                self.evalOnQuantity -= 9
         else:
             if move.special == 'E':
                 self.wValue -= self.pieceValues["P"]
-                self.evalOnQuantity += self.evalPieceValues["P"]
             else:
                 self.wValue -= self.pieceValues[move.pieceCaptured[1]]
-                self.evalOnQuantity += self.evalPieceValues[move.pieceCaptured[1]]
-            if move.special == "P":
-                self.evalOnQuantity += 9
         if not review:
             return
 
         self.hash.getMoveHash(move, True)
-        for k, v in self.hash.table.items():
-            print(k, v)
+        # for k, v in self.hash.table.items():
+        #     print(k, v)
         #50move rule
         if self.hash.table[self.hash.hash] >= 3:
             #print("StaleMate by repetition of positions")
@@ -122,17 +113,13 @@ class GameState():
             if aux.moveID[0] == "b":
                 if aux.special == 'E':
                     self.bValue += self.pieceValues["P"]
-                    self.evalOnQuantity += self.evalPieceValues["P"]
                 else:
                     self.bValue += self.pieceValues[aux.pieceCaptured[1]]
-                    self.evalOnQuantity += self.evalPieceValues[aux.pieceCaptured[1]]
             else:
                 if aux.special == 'E':
                     self.wValue += self.pieceValues["P"]
-                    self.evalOnQuantity -= self.evalPieceValues["P"]
                 else:
                     self.wValue += self.pieceValues[aux.pieceCaptured[1]]
-                    self.evalOnQuantity -= self.evalPieceValues[aux.pieceCaptured[1]]
 
             if not review:
                 return
@@ -153,8 +140,9 @@ class GameState():
         if move.moveID[1] == "R": self.checkRMoves(move, 1)
         if move.special != "":
             self.specialMoveFunction[move.special](True, move)
-        if real:
-            self.whiteToMove = not self.whiteToMove
+        self.whiteToMove = not self.whiteToMove
+        #if real:
+        #    self.whiteToMove = not self.whiteToMove
 
 
     def undoMove(self, real=True):
@@ -171,8 +159,9 @@ class GameState():
             if moveToUndo.moveID[1] == "R": self.checkRMoves(moveToUndo, -1)
             if moveToUndo.special != "":
                 self.specialMoveFunction[moveToUndo.special](False, moveToUndo)
-            if real:
-                self.whiteToMove = not self.whiteToMove
+            self.whiteToMove = not self.whiteToMove
+            #if real:
+            #    self.whiteToMove = not self.whiteToMove
             return moveToUndo
 
     """only legal moves"""
@@ -463,7 +452,7 @@ class GameState():
             for j in range(len(self.board[i])):
                 aux += self.board[i][j] + " "
             aux += "\n"
-        return aux
+        return aux[:-1]
 
 
 class Move():

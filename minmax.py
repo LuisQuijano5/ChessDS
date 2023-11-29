@@ -1,6 +1,6 @@
 import random
 import ChessEngine as ce
-import Tree as T
+import minmaxnodes as T
 
 
 def randomMove(moves):
@@ -21,12 +21,12 @@ def greedyMove(moves):
     return move
 
 
-class MontecarloFinder:
+class MinMax:
     def __init__(self, isWhite, gamestate):
         self.color = 1 if isWhite else -1
         self.gs = gamestate
         self.rootNode = T.Node(self.gs, self.color == 1)
-        self.depth = 400
+        self.depth = 500
 
     def updateRoot(self, node):
         aux = self.gs.moveLog.pop()
@@ -90,5 +90,5 @@ class MontecarloFinder:
                         maxNode = i
                         highest = self.color * maxNode.eval
         print(maxNode.move.moveID)
-        print(highest, self.color)
+        print(highest)
         return maxNode

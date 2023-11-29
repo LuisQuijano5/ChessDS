@@ -59,4 +59,5 @@ class Table:
             else:
                 self.table[self.hash] = 1
         else:
-            self.table[self.hash] -= 1
+            if self.hash in self.table:
+                self.table[self.hash] -= 1
